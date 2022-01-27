@@ -47,17 +47,16 @@ from utils.plots import Annotator, colors, save_one_box
 from utils.torch_utils import select_device, time_sync
 
 
-#arche writings additions
+# Arche Writings libs
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import figure
-import math
-import pyaudio     #sudo apt-get install python-pyaudio
-PyAudio = pyaudio.PyAudio     
+import pyaudio
 
+# Arche Writing variables
+PyAudio = pyaudio.PyAudio     
 audio = []
 sample_rate = 8000
-
 alphabet = list('撒健億媒間増感察総負街時哭병体封列効你老呆安发は切짜확로감外年와모ゼДが占乜산今もれすRビコたテパアEスどバウПm가бうクん스РりwАêãХйてシжغõ小éजভकöলレ入धबलخFসeवমوযиथशkحくúoनবएদYンदnuনمッьノкتبهtт一ادіاгرزरjvةзنLxっzэTपнлçşčतلイयしяトüषখথhцहیরこñóহリअعसमペيフdォドрごыСいگдとナZকইм三ョ나gшマで시Sقに口س介Иظ뉴そキやズВ자ص兮ض코격ダるなф리Юめき宅お世吃ま来店呼설진음염론波密怪殺第断態閉粛遇罩孽關警')
 
 @torch.no_grad()
@@ -224,12 +223,15 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
                         vid_writer[i] = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
                     vid_writer[i].write(im0)
 
+        # Arche Writing: Process detectiosn
         sorted(detections, key=lambda k: [k[1], k[0]])
-        # print("detections", detections)
         for d in detections:
             wavedata = wavedata+chr(d[4])
+        
+        # wavedata string 
         print("wavedata", wavedata)
 
+        # stream audio 
         p = PyAudio()
         stream = p.open(format = p.get_format_from_width(1), 
                 channels = 1, 
@@ -239,7 +241,6 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         stream.stop_stream()
         stream.close()
         p.terminate()
-        # print("all detections", detections)
 
     # Print results
     t = tuple(x / seen * 1E3 for x in dt)  # speeds per image
