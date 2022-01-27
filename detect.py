@@ -53,7 +53,7 @@ import matplotlib.pyplot as plt
 from matplotlib import figure
 import math
 import pyaudio     #sudo apt-get install python-pyaudio
-PyAudio = pyaudio.PyAudio
+PyAudio = pyaudio.PyAudio     
 
 audio = []
 sample_rate = 8000
