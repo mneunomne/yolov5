@@ -48,14 +48,14 @@ from utils.torch_utils import select_device, time_sync
 
 
 # Arche Writings libs
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib import figure
 import pyaudio
+import numpy as np
+from scipy.io.wavfile import write
+import sounddevice as sd
+from playsound import playsound
 
 # Arche Writing variables
 PyAudio = pyaudio.PyAudio     
-audio = []
 sample_rate = 8000
 alphabet = list('撒健億媒間増感察総負街時哭병体封列効你老呆安发は切짜확로감外年와모ゼДが占乜산今もれすRビコたテパアEスどバウПm가бうクん스РりwАêãХйてシжغõ小éजভकöলレ入धबलخFসeवমوযиथशkحくúoनবएদYンदnuনمッьノкتبهtт一ادіاгرزरjvةзنLxっzэTपнлçşčतلイयしяトüषখথhцहیরこñóহリअعसमペيフdォドрごыСいگдとナZকইм三ョ나gшマで시Sقに口س介Иظ뉴そキやズВ자ص兮ض코격ダるなф리Юめき宅お世吃ま来店呼설진음염론波密怪殺第断態閉粛遇罩孽關警')
 
@@ -149,7 +149,6 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
 
         detections = []
         index = 0
-        wavedata = ''
 
         # Process predictions
         for i, det in enumerate(pred):  # per image
@@ -180,8 +179,8 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
                 for *xyxy, conf, cls in reversed(det):
                     index += 1
                     xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
+                    # add class to xywh data
                     xywh.append(int(cls))
-                    print("xywh ", xywh)
                     detections.append(xywh)
                     if save_txt:  # Write to file
                         line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
@@ -224,23 +223,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
                     vid_writer[i].write(im0)
 
         # Arche Writing: Process detectiosn
-        sorted(detections, key=lambda k: [k[1], k[0]])
-        for d in detections:
-            wavedata = wavedata+chr(d[4])
-        
-        # wavedata string 
-        print("wavedata", wavedata)
-
-        # stream audio 
-        p = PyAudio()
-        stream = p.open(format = p.get_format_from_width(1), 
-                channels = 1, 
-                rate = 8000, 
-                output = True)
-        stream.write(wavedata)
-        stream.stop_stream()
-        stream.close()
-        p.terminate()
+        playDetections(detections)
 
     # Print results
     t = tuple(x / seen * 1E3 for x in dt)  # speeds per image
@@ -289,8 +272,27 @@ def main(opt):
     check_requirements(exclude=('tensorboard', 'thop'))
     run(**vars(opt))
 
-def processDetection (detections):
-    print("processDetection", detections)
+
+SAMPLERATE = 8000
+def playDetections(detections):
+    # Arche Writing: Process detectiosn
+    sorted(detections, key=lambda k: [k[1], k[0]])
+    numbers=[]
+    for d in detections:
+        numbers.append(d[4])
+    print("numbers", len(numbers), numbers)
+    if len(numbers) > 0:
+        playWavedata(numbers)
+
+# play wavedata as a string of chr(d[4])
+def playWavedata (numbers, sample_rate=SAMPLERATE):
+    wavedata = np.asarray(numbers).astype(np.int8)
+    pya = pyaudio.PyAudio()
+    stream = pya.open(format=pya.get_format_from_width(width=1), channels=1, rate=sample_rate, output=True)
+    stream.write(wavedata)
+    stream.stop_stream()
+    stream.close()
+    pya.terminate()
 
 if __name__ == "__main__":
     opt = parse_opt()
