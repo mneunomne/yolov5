@@ -56,8 +56,12 @@ from playsound import playsound
 
 # Arche Writing variables
 PyAudio = pyaudio.PyAudio     
-sample_rate = 8000
+#sample_rate = 8000
 alphabet = list('撒健億媒間増感察総負街時哭병体封列効你老呆安发は切짜확로감外年와모ゼДが占乜산今もれすRビコたテパアEスどバウПm가бうクん스РりwАêãХйてシжغõ小éजভकöলレ入धबलخFসeवমوযиथशkحくúoनবएদYンदnuনمッьノкتبهtт一ادіاгرزरjvةзنLxっzэTपнлçşčतلイयしяトüषখথhцहیরこñóহリअعसमペيフdォドрごыСいگдとナZকইм三ョ나gшマで시Sقに口س介Иظ뉴そキやズВ자ص兮ض코격ダるなф리Юめき宅お世吃ま来店呼설진음염론波密怪殺第断態閉粛遇罩孽關警')
+
+SAMPLERATE = 4000
+pya = pyaudio.PyAudio()
+stream = pya.open(format=pya.get_format_from_width(width=1), channels=1, rate=SAMPLERATE, output=True)
 
 @torch.no_grad()
 def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
@@ -65,14 +69,14 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         data=ROOT / 'data/Argoverse.yaml',  # dataset.yaml path
         imgsz=(800, 800),  # inference size (height, width)
         conf_thres=0.10,  # confidence threshold
-        iou_thres=0.45,  # NMS IOU threshold
+        iou_thres=0.75,  # NMS IOU threshold
         max_det=1000,  # maximum detections per image
         device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
         view_img=True,  # show results
         save_txt=True,  # save results to *.txt
         save_conf=False,  # save confidences in --save-txt labels
         save_crop=False,  # save cropped prediction boxes
-        nosave=False,  # do not save images/videos
+        nosave=True,  # do not save images/videos
         classes=None,  # filter by class: --class 0, or --class 0 2 3
         agnostic_nms=False,  # class-agnostic NMS
         augment=True,  # augmented inference
@@ -190,7 +194,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
                     if save_img or save_crop or view_img:  # Add bbox to image
                         c = int(cls)  # integer class
                         label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f}')
-                        annotator.box_label(xyxy, str(index), color=colors(c, True))
+                        annotator.box_label(xyxy, label, color=colors(c, True))
                         if save_crop:
                             save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
 
@@ -273,7 +277,7 @@ def main(opt):
     run(**vars(opt))
 
 
-SAMPLERATE = 8000
+
 def playDetections(detections):
     # Arche Writing: Process detectiosn
     sorted(detections, key=lambda k: [k[1], k[0]])
@@ -287,12 +291,11 @@ def playDetections(detections):
 # play wavedata as a string of chr(d[4])
 def playWavedata (numbers, sample_rate=SAMPLERATE):
     wavedata = np.asarray(numbers).astype(np.int8)
-    pya = pyaudio.PyAudio()
-    stream = pya.open(format=pya.get_format_from_width(width=1), channels=1, rate=sample_rate, output=True)
+    stream.start_stream()
     stream.write(wavedata)
     stream.stop_stream()
-    stream.close()
-    pya.terminate()
+    #stream.close()
+    #pya.terminate()
 
 if __name__ == "__main__":
     opt = parse_opt()
