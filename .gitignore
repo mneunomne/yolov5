@@ -256,5 +256,5 @@ crashlytics-build.properties
 fabric.properties
 
 # Arche Reading
-arche-reading/
 temp.wav
+!arche_reading/cover.png
