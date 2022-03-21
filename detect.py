@@ -48,26 +48,41 @@ from utils.torch_utils import select_device, time_sync
 
 
 # Arche Writings libs
-import pyaudio
-import numpy as np
-from scipy.io.wavfile import write
-import sounddevice as sd
-from playsound import playsound
+# import pyaudio
+# import numpy as np
+# from scipy.io.wavfile import write
+# import sounddevice as sd
+# from playsound import playsound
+import socketio
+
+
+# Socket.io client
+server_path = 'http://localhost:3000' # node server location
+socket_connected = False
+# Connect to socket.io server
+try:
+    socketClient = socketio.Client()
+    socketClient.connect(server_path)
+except socketio.exceptions.ConnectionError as err:
+    socket_connected = False
+    print("Error on socket connection")
+else:
+    socket_connected = True
 
 # Arche Writing variables
-PyAudio = pyaudio.PyAudio     
+# PyAudio = pyaudio.PyAudio     
 #sample_rate = 8000
 alphabet = list('撒健億媒間増感察総負街時哭병体封列効你老呆安发は切짜확로감外年와모ゼДが占乜산今もれすRビコたテパアEスどバウПm가бうクん스РりwАêãХйてシжغõ小éजভकöলレ入धबलخFসeवমوযиथशkحくúoनবएদYンदnuনمッьノкتبهtт一ادіاгرزरjvةзنLxっzэTपнлçşčतلイयしяトüषখথhцहیরこñóহリअعसमペيフdォドрごыСいگдとナZকইм三ョ나gшマで시Sقに口س介Иظ뉴そキやズВ자ص兮ض코격ダるなф리Юめき宅お世吃ま来店呼설진음염론波密怪殺第断態閉粛遇罩孽關警')
 
-SAMPLERATE = 4000
-pya = pyaudio.PyAudio()
-stream = pya.open(format=pya.get_format_from_width(width=1), channels=1, rate=SAMPLERATE, output=True)
+# SAMPLERATE = 4000
+# pya = pyaudio.PyAudio()
+# stream = pya.open(format=pya.get_format_from_width(width=1), channels=1, rate=SAMPLERATE, output=True)
 
 @torch.no_grad()
 def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         source=ROOT / 'data/images',  # file/dir/URL/glob, 0 for webcam
         data=ROOT / 'data/Argoverse.yaml',  # dataset.yaml path
-        imgsz=(800, 800),  # inference size (height, width)
+        imgsz=(450, 800),  # inference size (height, width)
         conf_thres=0.10,  # confidence threshold
         iou_thres=0.75,  # NMS IOU threshold
         max_det=1000,  # maximum detections per image
@@ -80,7 +95,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         classes=None,  # filter by class: --class 0, or --class 0 2 3
         agnostic_nms=False,  # class-agnostic NMS
         augment=True,  # augmented inference
-        visualize=False,  # visualize features
+        visualize=True,  # visualize features
         update=False,  # update all models
         project=ROOT / 'runs/detect',  # save results to project/name
         name='exp',  # save results to project/name
@@ -239,7 +254,7 @@ def parse_opt():
     parser.add_argument('--source', type=str, default=ROOT / 'data/images', help='file/dir/URL/glob, 0 for webcam')
     parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='(optional) dataset.yaml path')
     parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[800], help='inference size h,w')
-    parser.add_argument('--conf-thres', type=float, default=0.25, help='confidence threshold')
+    parser.add_argument('--conf-thres', type=float, default=0.15, help='confidence threshold')
     parser.add_argument('--iou-thres', type=float, default=0.45, help='NMS IoU threshold')
     parser.add_argument('--max-det', type=int, default=1000, help='maximum detections per image')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
@@ -257,8 +272,8 @@ def parse_opt():
     parser.add_argument('--name', default='exp', help='save results to project/name')
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
     parser.add_argument('--line-thickness', default=2, type=int, help='bounding box thickness (pixels)')
-    parser.add_argument('--hide-labels', default=True, action='store_true', help='hide labels')
-    parser.add_argument('--hide-conf', default=True, action='store_true', help='hide confidences')
+    parser.add_argument('--hide-labels', default=False, action='store_true', help='hide labels')
+    parser.add_argument('--hide-conf', default=False, action='store_true', help='hide confidences')
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
     parser.add_argument('--dnn', action='store_true', help='use OpenCV DNN for ONNX inference')
     opt = parser.parse_args()
@@ -279,18 +294,42 @@ def playDetections(detections):
     for d in detections:
         numbers.append(d[4])
     print("numbers", len(numbers), numbers)
-    if len(numbers) > 0:
-        playWavedata(numbers)
+    if socket_connected:
+        sendData(detections)
+    #
+    # if len(numbers) > 0:
+    #    playWavedata(numbers)
 
 # play wavedata as a string of chr(d[4])
-def playWavedata (numbers, sample_rate=SAMPLERATE):
-    wavedata = np.asarray(numbers).astype(np.int8)
-    stream.start_stream()
-    stream.write(wavedata)
-    stream.stop_stream()
-    #stream.close()
-    #pya.terminate()
+# def playWavedata (numbers, sample_rate=SAMPLERATE):
+    # wavedata = np.asarray(numbers).astype(np.int8)
+    # stream.start_stream()
+    # stream.write(wavedata)
+    # stream.stop_stream()
+    # stream.close()
+    # pya.terminate()
+
+def sendData (numbers):
+    try:
+        socketClient.emit('detections', numbers)
+    except socketio.exceptions.BadNamespaceError as err:
+        print("error sending data", err)
+
+def returnCameraIndexes():
+    # checks the first 10 indexes.
+    index = 0
+    arr = []
+    i = 10
+    while i > 0:
+        cap = cv2.VideoCapture(index)
+        if cap.read()[0]:
+            arr.append(index)
+            cap.release()
+        index += 1
+        i -= 1
+    return arr
 
 if __name__ == "__main__":
+    print(returnCameraIndexes())
     opt = parse_opt()
     main(opt)
